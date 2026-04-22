@@ -33,19 +33,18 @@
 
 #include <QPointer>
 
-#include "filesystem.h"
-#include "encoding.h"
-#include "config.h"
-#include "system.h"
 #include "childprocess.h"
+#include "config.h"
 #include "cookiejar.h"
+#include "encoding.h"
+#include "filesystem.h"
+#include "system.h"
 
 class WebPage;
 class CustomPage;
 class WebServer;
 
-class Phantom : public QObject
-{
+class Phantom : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantMap defaultPageSettings READ defaultPageSettings)
     Q_PROPERTY(QString libraryPath READ libraryPath WRITE setLibraryPath)
@@ -54,7 +53,6 @@ class Phantom : public QObject
     Q_PROPERTY(QObject* page READ page)
     Q_PROPERTY(bool cookiesEnabled READ areCookiesEnabled WRITE setCookiesEnabled)
     Q_PROPERTY(QVariantList cookies READ cookies WRITE setCookies)
-    Q_PROPERTY(bool webdriverMode READ webdriverMode)
     Q_PROPERTY(int remoteDebugPort READ remoteDebugPort)
 
 private:
@@ -94,8 +92,6 @@ public:
 
     bool areCookiesEnabled() const;
     void setCookiesEnabled(const bool value);
-
-    bool webdriverMode() const;
 
     int remoteDebugPort() const;
 
@@ -171,7 +167,7 @@ public slots:
      * @param port The proxy port
      * @param proxyType The type of this proxy
      */
-    void setProxy(const QString& ip, const qint64& port = 80, const QString& proxyType = "http", const QString& user = NULL, const QString& password = NULL);
+    void setProxy(const QString& ip, const qint64& port = 80, const QString& proxyType = "http", const QString& user = QString(), const QString& password = QString());
 
     QString proxy();
 
@@ -233,8 +229,8 @@ private:
     FileSystem* m_filesystem;
     System* m_system;
     ChildProcess* m_childprocess;
-    QList<QPointer<WebPage> > m_pages;
-    QList<QPointer<WebServer> > m_servers;
+    QList<QPointer<WebPage>> m_pages;
+    QList<QPointer<WebServer>> m_servers;
     Config m_config;
     CookieJar* m_defaultCookieJar;
     qreal m_defaultDpi;

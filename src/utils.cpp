@@ -32,10 +32,10 @@
 #include "consts.h"
 #include "terminal.h"
 
-#include <QFile>
-#include <QDebug>
 #include <QDateTime>
+#include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QtWebKitWidgets/QWebFrame>
 
 static QString findScript(const QString& jsFilePath, const QString& libraryPath)
@@ -55,7 +55,7 @@ static QString findScript(const QString& jsFilePath, const QString& libraryPath)
     return QString();
 }
 
-static QString jsFromScriptFile(const QString& scriptPath, const QString& scriptLanguage, const Encoding& enc)
+static QString jsFromScriptFile(const QString& scriptPath, const Encoding& enc)
 {
     QFile jsFile(scriptPath);
     if (jsFile.exists() && jsFile.open(QFile::ReadOnly)) {
@@ -65,16 +65,10 @@ static QString jsFromScriptFile(const QString& scriptPath, const QString& script
         // Remove CLI script heading
         if (scriptBody.startsWith("#!")) {
             int len = scriptBody.indexOf(QRegExp("[\r\n]"));
-            if (len == -1) { len = scriptBody.length(); }
+            if (len == -1) {
+                len = scriptBody.length();
+            }
             scriptBody.remove(0, len);
-        }
-
-        // If a language is specified and is not "javascript", reject it.
-        if (scriptLanguage != "javascript" && !scriptLanguage.isNull()) {
-            QString errMessage = QString("Unsupported language: %1").arg(scriptLanguage);
-            Terminal::instance()->cerr(errMessage);
-            qWarning("%s", qPrintable(errMessage));
-            return QString();
         }
 
         return scriptBody;
@@ -83,8 +77,7 @@ static QString jsFromScriptFile(const QString& scriptPath, const QString& script
     }
 }
 
-namespace Utils
-{
+namespace Utils {
 
 bool printDebugMessages = false;
 
@@ -113,16 +106,11 @@ void messageHandler(QtMsgType type, const QMessageLogContext& context, const QSt
     }
 }
 
-bool injectJsInFrame(const QString& jsFilePath, const QString& libraryPath, QWebFrame* targetFrame, const bool startingScript)
-{
-    return injectJsInFrame(jsFilePath, QString(), Encoding::UTF8, libraryPath, targetFrame, startingScript);
-}
-
-bool injectJsInFrame(const QString& jsFilePath, const QString& jsFileLanguage, const Encoding& jsFileEnc, const QString& libraryPath, QWebFrame* targetFrame, const bool startingScript)
+bool injectJsInFrame(const QString& jsFilePath, const Encoding& jsFileEnc, const QString& libraryPath, QWebFrame* targetFrame, const bool startingScript)
 {
     // Don't do anything if an empty string is passed
     QString scriptPath = findScript(jsFilePath, libraryPath);
-    QString scriptBody = jsFromScriptFile(scriptPath, jsFileLanguage, jsFileEnc);
+    QString scriptBody = jsFromScriptFile(scriptPath, jsFileEnc);
     if (scriptBody.isEmpty()) {
         if (startingScript) {
             Terminal::instance()->cerr(QString("Can't open '%1'").arg(jsFilePath));
@@ -132,25 +120,20 @@ bool injectJsInFrame(const QString& jsFilePath, const QString& jsFileLanguage, c
         return false;
     }
     // Execute JS code in the context of the document
-    targetFrame->evaluateJavaScript(scriptBody, QString(JAVASCRIPT_SOURCE_CODE_URL).arg(QFileInfo(scriptPath).fileName()));
+    targetFrame->evaluateJavaScript(scriptBody);
     return true;
 }
 
-bool loadJSForDebug(const QString& jsFilePath, const QString& libraryPath, QWebFrame* targetFrame, const bool autorun)
-{
-    return loadJSForDebug(jsFilePath, QString(), Encoding::UTF8, libraryPath, targetFrame, autorun);
-}
-
-bool loadJSForDebug(const QString& jsFilePath, const QString& jsFileLanguage, const Encoding& jsFileEnc, const QString& libraryPath, QWebFrame* targetFrame, const bool autorun)
+bool loadJSForDebug(const QString& jsFilePath, const Encoding& jsFileEnc, const QString& libraryPath, QWebFrame* targetFrame, const bool autorun)
 {
     QString scriptPath = findScript(jsFilePath, libraryPath);
-    QString scriptBody = jsFromScriptFile(scriptPath, jsFileLanguage, jsFileEnc);
+    QString scriptBody = jsFromScriptFile(scriptPath, jsFileEnc);
 
     scriptBody = QString("function __run() {\n%1\n}").arg(scriptBody);
-    targetFrame->evaluateJavaScript(scriptBody, QString(JAVASCRIPT_SOURCE_CODE_URL).arg(QFileInfo(scriptPath).fileName()));
+    targetFrame->evaluateJavaScript(scriptBody);
 
     if (autorun) {
-        targetFrame->evaluateJavaScript("__run()", QString());
+        targetFrame->evaluateJavaScript("__run()");
     }
 
     return true;

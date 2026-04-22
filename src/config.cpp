@@ -34,17 +34,16 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QtWebKitWidgets/QWebPage>
-#include <QtWebKitWidgets/QWebFrame>
 #include <QNetworkProxy>
+#include <QtWebKitWidgets/QWebFrame>
+#include <QtWebKitWidgets/QWebPage>
 
-#include "terminal.h"
-#include "qcommandline.h"
-#include "utils.h"
 #include "consts.h"
+#include "qcommandline.h"
+#include "terminal.h"
+#include "utils.h"
 
 #include <iostream>
-
 
 static const struct QCommandLineConfigEntry flags[] = {
     { QCommandLine::Option, '\0', "cookies-file", "Sets the file name to store the persistent cookies", QCommandLine::Optional },
@@ -76,13 +75,8 @@ static const struct QCommandLineConfigEntry flags[] = {
     { QCommandLine::Option, '\0', "ssl-client-certificate-file", "Sets the location of a client certificate", QCommandLine::Optional },
     { QCommandLine::Option, '\0', "ssl-client-key-file", "Sets the location of a clients' private key", QCommandLine::Optional },
     { QCommandLine::Option, '\0', "ssl-client-key-passphrase", "Sets the passphrase for the clients' private key", QCommandLine::Optional },
-    { QCommandLine::Option, '\0', "webdriver", "Starts in 'Remote WebDriver mode' (embedded GhostDriver): '[[<IP>:]<PORT>]' (default '127.0.0.1:8910') ", QCommandLine::Optional },
-    { QCommandLine::Option, '\0', "webdriver-logfile", "File where to write the WebDriver's Log (default 'none') (NOTE: needs '--webdriver') ", QCommandLine::Optional },
-    { QCommandLine::Option, '\0', "webdriver-loglevel", "WebDriver Logging Level: (supported: 'ERROR', 'WARN', 'INFO', 'DEBUG') (default 'INFO') (NOTE: needs '--webdriver') ", QCommandLine::Optional },
-    { QCommandLine::Option, '\0', "webdriver-selenium-grid-hub", "URL to the Selenium Grid HUB: 'URL_TO_HUB' (default 'none') (NOTE: needs '--webdriver') ", QCommandLine::Optional },
-    { QCommandLine::Param, '\0', "script", "Script", QCommandLine::Flags(QCommandLine::Optional | QCommandLine::ParameterFence)},
+    { QCommandLine::Param, '\0', "script", "Script", QCommandLine::Flags(QCommandLine::Optional | QCommandLine::ParameterFence) },
     { QCommandLine::Param, '\0', "argument", "Script argument", QCommandLine::OptionalMultiple },
-    { QCommandLine::Switch, 'w', "wd", "Equivalent to '--webdriver' option above", QCommandLine::Optional },
     { QCommandLine::Switch, 'h', "help", "Shows this message and quits", QCommandLine::Optional },
     { QCommandLine::Switch, 'v', "version", "Prints out PhantomJS version", QCommandLine::Optional },
     QCOMMANDLINE_CONFIG_ENTRY_END
@@ -122,30 +116,6 @@ void Config::processArgs(const QStringList& args)
     m_cmdLine->setArguments(args);
     m_cmdLine->setConfig(flags);
     m_cmdLine->parse();
-
-    // Inject command line parameters to be picked up by GhostDriver
-    if (isWebdriverMode()) {
-        QStringList argsForGhostDriver;
-
-        m_scriptFile = "main.js";                                           //< launch script
-
-        argsForGhostDriver << QString("--ip=%1").arg(m_webdriverIp);        //< "--ip=IP"
-        argsForGhostDriver << QString("--port=%1").arg(m_webdriverPort);    //< "--port=PORT"
-
-        if (!m_webdriverSeleniumGridHub.isEmpty()) {
-            argsForGhostDriver << QString("--hub=%1").arg(m_webdriverSeleniumGridHub);  //< "--hub=SELENIUM_GRID_HUB_URL"
-        }
-
-        if (!m_webdriverLogFile.isEmpty()) {
-            argsForGhostDriver << QString("--logFile=%1").arg(m_webdriverLogFile);          //< "--logFile=LOG_FILE"
-            argsForGhostDriver << "--logColor=false";                                   //< Force no-color-output in Log File
-        }
-
-        argsForGhostDriver << QString("--logLevel=%1").arg(m_webdriverLogLevel);    //< "--logLevel=LOG_LEVEL"
-
-        // Clear current args and override with those
-        setScriptArgs(argsForGhostDriver);
-    }
 }
 
 void Config::loadJsonFile(const QString& filePath)
@@ -177,7 +147,7 @@ void Config::loadJsonFile(const QString& filePath)
     // Add this object to the global scope
     webPage.mainFrame()->addToJavaScriptWindowObject("config", this);
     // Apply the JSON config settings to this very object
-    webPage.mainFrame()->evaluateJavaScript(configurator.arg(jsonConfig), QString());
+    webPage.mainFrame()->evaluateJavaScript(configurator.arg(jsonConfig));
 }
 
 QString Config::helpText() const
@@ -225,7 +195,6 @@ void Config::setOfflineStorageDefaultQuota(int offlineStorageDefaultQuota)
 {
     m_offlineStorageDefaultQuota = offlineStorageDefaultQuota * 1024;
 }
-
 
 QString Config::localStoragePath() const
 {
@@ -416,20 +385,6 @@ void Config::setScriptEncoding(const QString& value)
     m_scriptEncoding = value;
 }
 
-QString Config::scriptLanguage() const
-{
-    return m_scriptLanguage;
-}
-
-void Config::setScriptLanguage(const QString& value)
-{
-    if (value.isEmpty()) {
-        return;
-    }
-
-    m_scriptLanguage = value;
-}
-
 QString Config::scriptFile() const
 {
     return m_scriptFile;
@@ -520,61 +475,6 @@ bool Config::javascriptCanCloseWindows() const
     return m_javascriptCanCloseWindows;
 }
 
-void Config::setWebdriver(const QString& webdriverConfig)
-{
-    // Parse and validate the configuration
-    bool isValidPort;
-    QStringList wdCfg = webdriverConfig.split(':');
-    if (wdCfg.length() == 1 && wdCfg[0].toInt(&isValidPort) && isValidPort) {
-        // Only a PORT was provided
-        m_webdriverPort = wdCfg[0];
-    } else if (wdCfg.length() == 2 && !wdCfg[0].isEmpty() && wdCfg[1].toInt(&isValidPort) && isValidPort) {
-        // Both IP and PORT provided
-        m_webdriverIp = wdCfg[0];
-        m_webdriverPort = wdCfg[1];
-    }
-}
-
-QString Config::webdriver() const
-{
-    return QString("%1:%2").arg(m_webdriverIp).arg(m_webdriverPort);
-}
-
-bool Config::isWebdriverMode() const
-{
-    return !m_webdriverPort.isEmpty();
-}
-
-void Config::setWebdriverLogFile(const QString& webdriverLogFile)
-{
-    m_webdriverLogFile = webdriverLogFile;
-}
-
-QString Config::webdriverLogFile() const
-{
-    return m_webdriverLogFile;
-}
-
-void Config::setWebdriverLogLevel(const QString& webdriverLogLevel)
-{
-    m_webdriverLogLevel = webdriverLogLevel;
-}
-
-QString Config::webdriverLogLevel() const
-{
-    return m_webdriverLogLevel;
-}
-
-void Config::setWebdriverSeleniumGridHub(const QString& hubUrl)
-{
-    m_webdriverSeleniumGridHub = hubUrl;
-}
-
-QString Config::webdriverSeleniumGridHub() const
-{
-    return m_webdriverSeleniumGridHub;
-}
-
 // private:
 void Config::resetToDefaults()
 {
@@ -598,7 +498,6 @@ void Config::resetToDefaults()
     m_proxyAuthPass.clear();
     m_scriptArgs.clear();
     m_scriptEncoding = "UTF-8";
-    m_scriptLanguage.clear();
     m_scriptFile.clear();
     m_unknownOption.clear();
     m_versionFlag = false;
@@ -634,11 +533,6 @@ void Config::resetToDefaults()
     m_sslClientCertificateFile.clear();
     m_sslClientKeyFile.clear();
     m_sslClientKeyPassphrase.clear();
-    m_webdriverIp = QString();
-    m_webdriverPort = QString();
-    m_webdriverLogFile = QString();
-    m_webdriverLogLevel = "INFO";
-    m_webdriverSeleniumGridHub = QString();
 }
 
 void Config::setProxyAuthPass(const QString& value)
@@ -685,10 +579,6 @@ void Config::handleSwitch(const QString& sw)
 {
     setHelpFlag(sw == "help");
     setVersionFlag(sw == "version");
-
-    if (sw == "wd") {
-        setWebdriver(DEFAULT_WEBDRIVER_CONFIG);
-    }
 }
 
 void Config::handleOption(const QString& option, const QVariant& value)
@@ -797,10 +687,6 @@ void Config::handleOption(const QString& option, const QVariant& value)
         setScriptEncoding(value.toString());
     }
 
-    if (option == "script-language") {
-        setScriptLanguage(value.toString());
-    }
-
     if (option == "web-security") {
         setWebSecurityEnabled(boolValue);
     }
@@ -821,18 +707,6 @@ void Config::handleOption(const QString& option, const QVariant& value)
     }
     if (option == "ssl-client-key-passphrase") {
         setSslClientKeyPassphrase(value.toByteArray());
-    }
-    if (option == "webdriver") {
-        setWebdriver(value.toString().length() > 0 ? value.toString() : DEFAULT_WEBDRIVER_CONFIG);
-    }
-    if (option == "webdriver-logfile") {
-        setWebdriverLogFile(value.toString());
-    }
-    if (option == "webdriver-loglevel") {
-        setWebdriverLogLevel(value.toString());
-    }
-    if (option == "webdriver-selenium-grid-hub") {
-        setWebdriverSeleniumGridHub(value.toString());
     }
 }
 

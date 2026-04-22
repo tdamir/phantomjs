@@ -31,15 +31,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <QNetworkProxy>
 #include <QString>
 #include <QStringList>
-#include <QNetworkProxy>
 #include <QVariant>
 
 class QCommandLine;
 
-class Config: public QObject
-{
+class Config : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString cookiesFile READ cookiesFile WRITE setCookiesFile)
     Q_PROPERTY(bool diskCacheEnabled READ diskCacheEnabled WRITE setDiskCacheEnabled)
@@ -67,10 +66,6 @@ class Config: public QObject
     Q_PROPERTY(QString sslClientCertificateFile READ sslClientCertificateFile WRITE setSslClientCertificateFile)
     Q_PROPERTY(QString sslClientKeyFile READ sslClientKeyFile WRITE setSslClientKeyFile)
     Q_PROPERTY(QByteArray sslClientKeyPassphrase READ sslClientKeyPassphrase WRITE setSslClientKeyPassphrase)
-    Q_PROPERTY(QString webdriver READ webdriver WRITE setWebdriver)
-    Q_PROPERTY(QString webdriverLogFile READ webdriverLogFile WRITE setWebdriverLogFile)
-    Q_PROPERTY(QString webdriverLogLevel READ webdriverLogLevel WRITE setWebdriverLogLevel)
-    Q_PROPERTY(QString webdriverSeleniumGridHub READ webdriverSeleniumGridHub WRITE setWebdriverSeleniumGridHub)
 
 public:
     Config(QObject* parent = 0);
@@ -141,9 +136,6 @@ public:
     QString scriptEncoding() const;
     void setScriptEncoding(const QString& value);
 
-    QString scriptLanguage() const;
-    void setScriptLanguage(const QString& value);
-
     QString scriptFile() const;
     void setScriptFile(const QString& value);
 
@@ -194,19 +186,6 @@ public:
 
     void setSslClientKeyPassphrase(const QByteArray& sslClientKeyPassphrase);
     QByteArray sslClientKeyPassphrase() const;
-
-    void setWebdriver(const QString& webdriverConfig);
-    QString webdriver() const;
-    bool isWebdriverMode() const;
-
-    void setWebdriverLogFile(const QString& webdriverLogFile);
-    QString webdriverLogFile() const;
-
-    void setWebdriverLogLevel(const QString& webdriverLogLevel);
-    QString webdriverLogLevel() const;
-
-    void setWebdriverSeleniumGridHub(const QString& hubUrl);
-    QString webdriverSeleniumGridHub() const;
 
 public slots:
     void handleSwitch(const QString& sw);
@@ -262,11 +241,6 @@ private:
     QString m_sslClientCertificateFile;
     QString m_sslClientKeyFile;
     QByteArray m_sslClientKeyPassphrase;
-    QString m_webdriverIp;
-    QString m_webdriverPort;
-    QString m_webdriverLogFile;
-    QString m_webdriverLogLevel;
-    QString m_webdriverSeleniumGridHub;
 };
 
 #endif // CONFIG_H

@@ -27,14 +27,15 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "consts.h"
-#include "utils.h"
+#include "crashdump.h"
 #include "env.h"
 #include "phantom.h"
-#include "crashdump.h"
+#include "utils.h"
 
 #include <QApplication>
-#include <QSslSocket>
 #include <QIcon>
+#include <QSslConfiguration>
+#include <QSslSocket>
 #include <QWebSettings>
 
 #include <exception>
@@ -42,6 +43,11 @@
 
 static int inner_main(int argc, char** argv)
 {
+#ifdef Q_OS_LINUX
+    // override default Qt platform plugin
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+#endif
+
     QApplication app(argc, argv);
 
     app.setWindowIcon(QIcon(":/phantomjs-icon.png"));
@@ -56,7 +62,7 @@ static int inner_main(int argc, char** argv)
 #if defined(Q_OS_LINUX)
     if (QSslSocket::supportsSsl()) {
         // Don't perform on-demand loading of root certificates on Linux
-        QSslSocket::addDefaultCaCertificates(QSslSocket::systemCaCertificates());
+        QSslSocket::addDefaultCaCertificates(QSslConfiguration::systemCaCertificates());
     }
 #endif
 

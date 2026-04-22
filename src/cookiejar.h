@@ -31,20 +31,19 @@
 #ifndef COOKIEJAR_H
 #define COOKIEJAR_H
 
-#include <QSettings>
 #include <QNetworkCookie>
 #include <QNetworkCookieJar>
+#include <QSettings>
 #include <QVariantList>
 #include <QVariantMap>
 
-class CookieJar: public QNetworkCookieJar
-{
+class CookieJar : public QNetworkCookieJar {
     Q_OBJECT
 
     Q_PROPERTY(QVariantList cookies READ cookiesToMap WRITE addCookiesFromMap)
 
 public:
-    CookieJar(QString cookiesFile, QObject* parent = NULL);
+    CookieJar(QString cookiesFile, QObject* parent = Q_NULLPTR);
     virtual ~CookieJar();
 
     bool setCookiesFromUrl(const QList<QNetworkCookie>& cookieList, const QUrl& url);

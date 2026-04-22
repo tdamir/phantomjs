@@ -32,9 +32,10 @@
 #define WEBPAGE_H
 
 #include <QMap>
+#include <QPdfWriter>
 #include <QVariantMap>
-#include <QtWebKitWidgets/QWebPage>
 #include <QtWebKitWidgets/QWebFrame>
+#include <QtWebKitWidgets/QWebPage>
 
 #include "cookiejar.h"
 
@@ -45,8 +46,7 @@ class NetworkAccessManager;
 class QWebInspector;
 class Phantom;
 
-class WebPage : public QObject, public QWebFrame::PrintCallback
-{
+class WebPage : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString title READ title)
     Q_PROPERTY(QString frameTitle READ frameTitle)
@@ -275,7 +275,7 @@ public slots:
      * @brief getPage
      * @param windowName
      * @return Returns the page that matches <code>'window.name'</code>,
-     *         or NULL if none is found
+     *         or Q_NULLPTR if none is found
      */
     QObject* getPage(const QString& windowName) const;
 
@@ -507,15 +507,17 @@ signals:
 
 private slots:
     void finish(bool ok);
-    void setupFrame(QWebFrame* frame = NULL);
+    void setupFrame(QWebFrame* frame = Q_NULLPTR);
     void updateLoadingProgress(int progress);
     void handleRepaintRequested(const QRect& dirtyRect);
     void handleUrlChanged(const QUrl& url);
     void handleCurrentFrameDestroyed();
 
 private:
-    QImage renderImage();
-    bool renderPdf(const QString& fileName);
+    enum RenderMode { Content,
+        Viewport };
+    QImage renderImage(const RenderMode mode = Content);
+    bool renderPdf(QPdfWriter& pdfWriter);
     void applySettings(const QVariantMap& defaultSettings);
     QString userAgent() const;
 
